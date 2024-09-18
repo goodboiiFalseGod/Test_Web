@@ -1,22 +1,36 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
-public class LoadSprites : MonoBehaviour {
-    public GameObject[] spriteRenderer;
-    public string[] strings;
+public class LoadSprites : MonoBehaviour
+{
+    [SerializeField] private AssetRendererPair[] _assets;
 
-
-    public void load() {
-        for (int i = 0; i < spriteRenderer.Length; i++) {
-            StartCoroutine(LoadSprite(spriteRenderer[i].GetComponent<SpriteRenderer>(), i));
+    public void Load()
+    {
+        foreach (AssetRendererPair pair in _assets)
+        {
+            StartCoroutine(LoadCoroutine(pair));
         }
     }
 
-    IEnumerator LoadSprite(SpriteRenderer spriteRenderer, int number) {
-        var task = Addressables.LoadAssetAsync<Sprite>(strings[number]);
-        yield return task;
-        spriteRenderer.sprite = task.Result;
+    private IEnumerator LoadCoroutine(AssetRendererPair pair)
+    {
+        AsyncOperationHandle<Sprite> handle = pair.AssetReference.LoadAssetAsync<Sprite>();
+        yield return handle;
+        if (handle.Status == AsyncOperationStatus.Succeeded)
+        {
+            Sprite sprite = handle.Result;
+            pair.SpriteRenderer.sprite = sprite;
+        }
     }
 
+    [Serializable]
+    public struct AssetRendererPair
+    {
+        public SpriteRenderer SpriteRenderer;
+        public AssetReferenceSprite AssetReference;
+    }
 }
